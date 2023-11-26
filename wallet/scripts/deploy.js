@@ -4,19 +4,19 @@ const azukiPriceContract = "0xa8b9a447c73191744d5b79bce864f343455e1150" // https
 async function main() {
   const Token = await ethers.getContractFactory("Token");
   const token = await Token.deploy("Token", "TT1", 10000000);
-  console.log("Token deployed @ "+ await token.getAddress());
+  console.log("Token deployed @ "+ await token.address);
 
   const Wallet = await ethers.getContractFactory("Wallet");
   const wallet = await Wallet.deploy(ethUsdContract, azukiPriceContract);
-  console.log("Wallet deployed @ "+ await wallet.getAddress());
+  console.log("Wallet deployed @ "+ await wallet.address);
 
   const PriceConsumerEthUsd = await ethers.getContractFactory("PriceConsumer");
   const priceConsumerEthUsd = await PriceConsumer.deploy(PriceConsumerEthUsd);
-  console.log("PriceConsumer ETH/USD deployed @ "+ await priceConsumerEthUsd.getAddress());
+  console.log("PriceConsumer ETH/USD deployed @ "+ await priceConsumerEthUsd.address);
 
   const PriceConsumerAzukiUsd = await ethers.getContractFactory("PriceConsumer");
   const priceConsumerAzukiUsd = await PriceConsumer.deploy(PriceConsumerAzukiUsd);
-  console.log("PriceConsumer Azuki/USD deployed @ "+ await priceConsumerAzukiUsd.getAddress());
+  console.log("PriceConsumer Azuki/USD deployed @ "+ await priceConsumerAzukiUsd.address);
 }
 
 main().catch((error) => {
