@@ -15,9 +15,10 @@ contract PriceConsumerV3{
             /* uint80 roundId */, 
             int256 answer, 
             /* uint256 startedAt */, 
-            /* uint256 updatedAt */, 
+            uint256 updatedAt , 
             /* uint80 answeredInRound */
         )=priceFeed.latestRoundData();
+        require(updatedAt > 0, "Round not complete");
         return answer;
     }
 

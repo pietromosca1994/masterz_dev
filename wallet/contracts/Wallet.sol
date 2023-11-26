@@ -7,34 +7,40 @@ import "./PriceConsumerV3.sol";
 
 contract Wallet is Ownable{
     uint public constant usdDecimals=2;
-    uint public  constant tokenDecimals=18;
-    uint public constant nftPrice=100; // in USD
+    uint public  constant nftDecimals=18;
+    uint public nftPrice;          // in ETH
     uint public ownerEthAmountToWithdraw;
     uint public ownerTokenAmountToWithdraw;
 
     address public oracleEthUsdPrice;
-    address public oracleTokenUsdPrice;
+    address public oracleTokenEthPrice;
 
     PriceConsumerV3 public ethUsdContract;
-    PriceConsumerV3 public tokenUsdContract;
+    PriceConsumerV3 public tokenEthContract;
 
     mapping (address => uint256)  public userEthDeposits;
     mapping (address => mapping(address => uint256)) public userTokenDeposits;
 
     constructor (address clEthUsd, address clTokenUsd){
         oracleEthUsdPrice=clEthUsd;
-        oracleTokenUsdPrice=clTokenUsd;
+        oracleTokenEthPrice=clTokenUsd;
 
         ethUsdContract = new PriceConsumerV3(oracleEthUsdPrice);
-        tokenUsdContract = new PriceConsumerV3(oracleTokenUsdPrice);
+        tokenEthContract = new PriceConsumerV3(oracleTokenEthPrice);
     }
 
-    receive() external payable {
-        registerUserDeposit(msg.sender, msg.value);
+    function depositEth() external payable {
+        require(msg.value > 0, "Deposit amount must be greater than 0");
+        userEthDeposits[msg.sender] += msg.value;
     }
 
-    function registerUserDeposit(address sender, uint256 value) internal {
-        userEthDeposits[sender]+=value;
+    function getNFTPrice() external view returns (uint256){
+        uint256 price;
+        int iPrice;
+        AggregatorV3Interface nftOraclePrice = AggregatorV3Interface(oracleTokenEthPrice);
+        (, iPrice, , ,)=nftOraclePrice.latestRoundData();
+        price=uint256(iPrice);
+        return price;
     }
 
     function convertUSDInEth(uint usdAmount) public view returns (uint) {
@@ -43,13 +49,14 @@ contract Wallet is Ownable{
         uint mulDecs = 18 + ethPriceDecimals - usdDecimals;
         uint convertAmountInEth = usdAmount * (10 ** mulDecs) / ethPrice;
         return convertAmountInEth;
-}
-    function transferEthAmountOnBuy(uint nftNumber) public {
-        uint calcTotalUSDAmount=nftPrice*nftNumber*(10**2);
-        uint ethAmountForBuying=convertUSDInEth(calcTotalUSDAmount);
-        require (userEthDeposits[msg.sender]>=ethAmountForBuying, "not enough deposits by the user");
-        ownerEthAmountToWithdraw+=ethAmountForBuying;
-        userEthDeposits[msg.sender]-=ethAmountForBuying;
+    }
+
+    function convertEthInUSD(uint ethAmount) public view returns (uint){
+        uint ethPriceDecimals = ethUsdContract.getPriceDecimals();
+        uint ethPrice=uint(ethUsdContract.getLatestPrice());
+        uint divDecs=18+ethPriceDecimals-usdDecimals;
+        uint userUSDDeposit=ethAmount*ethPrice/(10 ** divDecs);
+        return userUSDDeposit;
     }
 
     function userDeposits(address token, uint256 amount) external {
@@ -57,29 +64,62 @@ contract Wallet is Ownable{
         userTokenDeposits[msg.sender][token]+=amount;
     }
 
-    function convertTokenInUSD(address token, address user) public view returns (uint) {
-        uint tokenPriceDecimals = tokenUsdContract.getPriceDecimals();
-        uint tokenPrice = uint (tokenUsdContract.getLatestPrice());
-        uint divDecs = 18 + tokenPriceDecimals - usdDecimals;
-        uint userUSDDeposit = userTokenDeposits[user][token] * tokenPrice / (10 ** divDecs);
-        return userUSDDeposit;
+    function convertNFTPriceInUSD() public view returns (uint) {
+        uint tokenPriceDecimals = tokenEthContract.getPriceDecimals();
+        uint tokenPrice = uint (tokenEthContract.getLatestPrice());
+        
+
+        uint ethPriceDecimals = ethUsdContract.getPriceDecimals();
+        uint ethPrice=uint(ethUsdContract.getLatestPrice());
+        uint divDecs = tokenPriceDecimals + ethPriceDecimals - usdDecimals;
+
+        uint tokenUSDPrice = tokenPrice * ethPrice/ (10**divDecs);
+        return tokenUSDPrice;
     }
 
-    function convertUSDInToken(uint usdAmount) public view returns (uint) {
-        uint tokenPriceDecimals = tokenUsdContract.getPriceDecimals();
-        uint tokenPrice = uint (tokenUsdContract.getLatestPrice());
-        uint mulDecs = 18 + tokenPriceDecimals - usdDecimals;
-        uint convertAmountInTokens = usdAmount * (10 ** mulDecs) / tokenPrice;
-        return convertAmountInTokens;
+    function convertUSDInNFTAmount(uint usdAmount) public view returns (uint) {
+        uint tokenPriceDecimals = tokenEthContract.getPriceDecimals();
+        uint tokenPrice = uint (tokenEthContract.getLatestPrice());
+
+        uint ethPriceDecimals = ethUsdContract.getPriceDecimals();
+        uint ethPrice = uint (ethUsdContract.getLatestPrice());
+
+
+        uint mulDecs =  tokenPriceDecimals + ethPriceDecimals - usdDecimals;
+        uint convertAmountInETH = usdAmount * (10 ** mulDecs) / ethPrice;
+
+        uint convertETHInTokens=convertAmountInETH/tokenPrice;
+
+        // uint totalCosts=convertETHInTokens*tokenPrice/(ethPrice*10**8);
+        // uint remainingUSD=usdAmount - totalCosts;
+        
+        return convertETHInTokens;
     }
 
-    function transferTokenAmountOnBuy(address token, uint nftNumber) public {
-        uint calcTotalUSDAmount=nftPrice*nftNumber*(10**2);
-        uint tokenAmountForBuying=convertUSDInToken(calcTotalUSDAmount);
-        require (userTokenDeposits[msg.sender][token]>=tokenAmountForBuying, "not enough deposits by the user");
-        ownerTokenAmountToWithdraw+=tokenAmountForBuying;
-        userTokenDeposits[msg.sender][token]-=tokenAmountForBuying;       
+    function getUserTokenDeposits(address user, address token) public view returns(uint256){
+        return userTokenDeposits[user][token];
     }
+        
+    function getUserEthDeposits(address user) public view returns(uint256){
+        return userEthDeposits[user];
+    }
+
+
+    // function transferTokenAmountOnBuy(address token, uint nftNumber) public {
+    //     uint calcTotalUSDAmount=nftPrice*nftNumber*(10**2);
+    //     uint tokenAmountForBuying=convertUSDInToken(calcTotalUSDAmount);
+    //     require (userTokenDeposits[msg.sender][token]>=tokenAmountForBuying, "not enough deposits by the user");
+    //     ownerTokenAmountToWithdraw+=tokenAmountForBuying;
+    //     userTokenDeposits[msg.sender][token]-=tokenAmountForBuying;       
+    // }
+
+    // function transferEthAmountOnBuy(uint nftNumber) public {
+    //     uint calcTotalUSDAmount=nftPrice*nftNumber*(10**2);
+    //     uint ethAmountForBuying=convertUSDInEth(calcTotalUSDAmount);
+    //     require (userEthDeposits[msg.sender]>=ethAmountForBuying, "not enough deposits by the user");
+    //     ownerEthAmountToWithdraw+=ethAmountForBuying;
+    //     userEthDeposits[msg.sender]-=ethAmountForBuying;
+    // }
 
 }
 

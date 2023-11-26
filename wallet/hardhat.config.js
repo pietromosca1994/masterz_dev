@@ -5,12 +5,14 @@ require('dotenv').config()
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.19",
-  
+
   networks: {
-    goerli: {
-      url: process.env.SEPOLIA_RPC_URL,
-      accounts: [process.env.PRIVATE_KEY]
-    }
+    hardhat: {
+      forking: {
+        url: process.env.MAINNET_RPC_URL,
+        blockNumber: 18656489
+      }
+    },
   }
 };
 
