@@ -1,0 +1,51 @@
+const { expect } = require("chai");
+
+describe("ERC721ProxyV1 contract", function () {
+  let owner;
+  let addr1;
+  let addr2;
+  let addrs;
+
+  let erc721Proxy;
+
+  beforeEach(async function () {
+    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+
+    const ERC721ProxyV1 = await ethers.getContractFactory("ERC721ProxyV1");
+    erc721Proxy = await ERC721ProxyV1.deploy();
+    await erc721Proxy.deployed();
+
+    erc721Proxy.initialize("MyERC721Token", "MTK", owner.address);
+  });
+
+  it("should initialize with the correct values", async function () {
+    const name = await erc721Proxy.name();
+    const symbol = await erc721Proxy.symbol();
+    const contractOwner = await erc721Proxy.owner();
+    const version = await erc721Proxy.getVersion();
+
+    expect(name).to.equal("MyERC721Token");
+    expect(symbol).to.equal("MTK");
+    expect(contractOwner).to.equal(owner.address);
+    expect(version).to.equal(1);
+  });
+
+  it("should allow the owner to mint and burn tokens", async function () {
+    const tokenId = 1;
+
+    await erc721Proxy.mint(addr1.address, tokenId);
+    const ownerOfToken = await erc721Proxy.ownerOf(tokenId);
+    expect(ownerOfToken).to.equal(addr1.address);
+
+    await erc721Proxy.burn(tokenId);
+    const balance = await erc721Proxy.balanceOf(addr1.address);
+    expect(balance).to.equal(0);
+  });
+
+  it("should not allow non-owners to mint or burn tokens", async function () {
+    const tokenId = 1;
+
+    await expect(erc721Proxy.connect(addr1).mint(addr2.address, tokenId)).to.be.revertedWithCustomError(erc721Proxy, 'OwnableUnauthorizedAccount');
+    await expect(erc721Proxy.connect(addr1).burn(tokenId)).to.be.revertedWithCustomError(erc721Proxy, 'OwnableUnauthorizedAccount');
+  });
+});
