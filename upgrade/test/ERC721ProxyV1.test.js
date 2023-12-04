@@ -21,9 +21,6 @@ describe("ERC721ProxyV1 contract", function () {
 
     erc721ProxyV1_address=erc721ProxyV1.address;
     // console.log("erc721ProxyV1 deployed @ "+erc721ProxyV1.address)
-
-
-    // erc721Proxy.initialize("MyERC721Token", "MTK", owner.address);
   });
 
   it("should initialize with the correct values", async function () {
@@ -50,6 +47,13 @@ describe("ERC721ProxyV1 contract", function () {
     expect(Number(balance)).to.equal(0);
   });
 
+  it("should not allow non-owners to mint or burn tokens", async function () {
+    const tokenId = 1;
+
+    await expect(erc721ProxyV1.connect(addr1).mint(addr2.address, tokenId)).to.be.revertedWithCustomError(erc721ProxyV1, 'OwnableUnauthorizedAccount');
+    await expect(erc721ProxyV1.connect(addr1).burn(tokenId)).to.be.revertedWithCustomError(erc721ProxyV1, 'OwnableUnauthorizedAccount');
+  });
+
   it("should be upgradeable", async function () {
 
     // deploy version 2 and upgrade version 1
@@ -60,13 +64,4 @@ describe("ERC721ProxyV1 contract", function () {
     expect(Number(version)).to.equal(2);
 
   })
-
-  // it("should not allow non-owners to mint or burn tokens", async function () {
-  //   const tokenId = 1;
-
-  //   await expect(erc721ProxyV1.connect(addr1).mint(addr2.address, tokenId)).to.be.revertedWithCustomError(erc721ProxyV1, 'OwnableUnauthorizedAccount');
-  //   await expect(erc721ProxyV1.connect(addr1).burn(tokenId)).to.be.revertedWithCustomError(erc721ProxyV1, 'OwnableUnauthorizedAccount');
-  // });
-
-
 });

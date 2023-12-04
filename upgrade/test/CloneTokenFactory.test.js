@@ -8,78 +8,61 @@ describe("CloneTokenFactory", function () {
   let addr1;
   let addr2;
 
+  let erc721ProxyV1
+  let erc721ProxyV1_clone;
+
+  let erc721ProxyV1_address;
+  let erc721ProxyV1_clone_address;
+
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
+    console.log('Owner:   ', owner.address);
 
     // Deploy the ERC721ProxyV1 contract
-    ERC721ProxyV1 = await ethers.getContractFactory("ERC721ProxyV1");
-    erc721ProxyV1 = await ERC721ProxyV1.connect(owner).deploy();
+    const ERC721ProxyV1 = await ethers.getContractFactory("ERC721ProxyV1");
+    erc721ProxyV1 = await upgrades.deployProxy(ERC721ProxyV1, ["MyERC721Token", "MTK", owner.address], { initializer: 'initialize', kind: 'uups'});
     await erc721ProxyV1.deployed();
-    // console.log("erc721ProxyV1 deployed @ " + erc721ProxyV1.address);
-
-    // Deploy the ERC721Proxy contract
-    ERC721ProxyV2 = await ethers.getContractFactory("ERC721ProxyV2");
-    erc721ProxyV2 = await ERC721ProxyV2.connect(owner).deploy();
-    await erc721ProxyV2.deployed();
-    // console.log("erc721ProxyV2 deployed @ " + erc721ProxyV2.address);
+    erc721ProxyV1_address=erc721ProxyV1.address;
+    // console.log("erc721ProxyV1 deployed @ " + erc721ProxyV1_address);
 
     // Deploy the CloneTokenFactory contract
+    const implAddress = await upgrades.erc1967.getImplementationAddress(erc721ProxyV1.address);
     CloneTokenFactory = await ethers.getContractFactory("CloneTokenFactory");
-    cloneTokenFactory = await CloneTokenFactory.connect(owner).deploy(erc721ProxyV1.address);
-
-    // // Deploy ERC721ProxyV1 using the CloneTokenFactory
-    // const tx = await cloneTokenFactory.createToken("TestToken", "TT", owner.address);
-    // const receipt = await tx.wait();
-    // const createdTokenAddress = receipt.events[0].args.tokenAddress;
-
-    // ERC721ProxyV1 = await ethers.getContractAt("ERC721ProxyV1", createdTokenAddress);
-
+    cloneTokenFactory = await CloneTokenFactory.connect(owner).deploy(implAddress);
   });
 
   it("should create a new ERC721ProxyV1 token", async function () {
 
     // Deploy ERC721ProxyV1 using the CloneTokenFactory
     const tx = await cloneTokenFactory.createToken("TestToken", "TT", owner.address);
-    const receipt = await tx.wait();
-    const createdTokenAddress = receipt.events[2].args.tokenAddress;
-
-    // console.log(createdTokenAddress);
-    ERC721ProxyV1_clone = await ethers.getContractAt("ERC721ProxyV1", createdTokenAddress);
-    console.log('ERC721ProxyV1_clone deployed @ '+ERC721ProxyV1_clone.address)
+    
+    const receipt = await tx.wait()
+    const events = await cloneTokenFactory.queryFilter("TokenCreated");
+    erc721ProxyV1_clone_address=events[0].args[1];
+    erc721ProxyV1_clone = await ethers.getContractAt("ERC721ProxyV1", erc721ProxyV1_clone_address);
+    console.log('ERC721ProxyV1_clone deployed @ '+erc721ProxyV1_clone_address)
 
     // Check if the owner of the created token is correct
-    const tokenOwner = await ERC721ProxyV1_clone.owner();
+    const tokenOwner = await erc721ProxyV1_clone.owner();
     expect(tokenOwner).to.equal(owner.address);
 
     // Check if the name and symbol are set correctly
-    const tokenName = await ERC721ProxyV1_clone.name();
-    const tokenSymbol = await ERC721ProxyV1_clone.symbol();
+    const tokenName = await erc721ProxyV1_clone.name();
+    const tokenSymbol = await erc721ProxyV1_clone.symbol();
+    const tokenVersion = await erc721ProxyV1_clone.getVersion();
     expect(tokenName).to.equal("TestToken");
     expect(tokenSymbol).to.equal("TT");
+    expect(Number(tokenVersion)).to.equal(1);
   });
 
-  it("should upgrade the ERC721 token to version 2", async function () {
-    // Deploy the ERC721ProxyV2 implementation contract
+  it("clone should be upgradeable", async function () {
+
+    // deploy version 2 and upgrade version 1
     const ERC721ProxyV2 = await ethers.getContractFactory("ERC721ProxyV2");
-    const erc721ProxyV2 = await upgrades.deployProxy(ERC721ProxyV2, ['TokenName', 'TOK', owner.address], { initializer: 'initialize' });
-    await erc721ProxyV2.deployed();
-    console.log("erc721ProxyV2 deployed @: "+erc721ProxyV2.address);
+    erc721ProxyV2 = await upgrades.upgradeProxy(erc721ProxyV1.address, ERC721ProxyV2, {call: {fn: 'reInitialize', args: ["MyERC721Token", "MTK", owner.address]}, kind: "uups"});
 
-    ERC721ProxyV1 = await ethers.getContractFactory("ERC721ProxyV1");
-    erc721ProxyV1 = await ERC721ProxyV1.connect(owner).deploy();
-    await erc721ProxyV1.deployed();
-    await erc721ProxyV1.initialize('TokenName', 'TOK', owner.address);
-
-    erc721ProxyV2 = await upgrades.upgradeProxy(erc721ProxyV1.address, ERC721ProxyV2);
-
-    // Retrieve the ERC721ProxyV2 proxy instance
-    ERC721ProxyV2 = await ethers.getContractAt("ERC721ProxyV2", ERC721ProxyV1.address);
-
-    // Perform checks to verify the upgrade
-    const tokenName = await ERC721ProxyV2.name();
-    const tokenSymbol = await ERC721ProxyV2.symbol();
-    expect(tokenName).to.equal("UpgradedToken");
-    expect(tokenSymbol).to.equal("UT");
-  });
+    const version = await erc721ProxyV1.getVersion();
+    expect(Number(version)).to.equal(2);
+  })
 
 })
