@@ -19,6 +19,21 @@
 *.tar.gz
 *.rar
 
+# environment files
+*.env
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# hardhat 
+node_modules
+coverage
+coverage.json
+typechain
+
+cache 
+artifacts
+
+# lambda
+lib
