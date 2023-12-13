@@ -1,3 +1,8 @@
+# Wallet
+## Description
+Implementation of a wallet wit currency conversion using a Chainlink oracle.
+
+## Getting Started
 .Env
 ```bash 
 INFURA_API_KEY=
@@ -31,3 +36,8 @@ Verify the contract ()
 ``` shell
 npx hardhat verify --network <network_name> <address>
 ```
+
+## References 
+[Chainlink](https://chain.link)  
+[ETH/USD contract](https://data.chain.link/ethereum/mainnet/crypto-usd/eth-usd)  
+[Azuki Contract](https://data.chain.link/ethereum/mainnet/nft-floor-prices/coinbase-azuki-floor-price-eth)

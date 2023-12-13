@@ -1,3 +1,8 @@
+# UPgreadable Contract 
+## Description
+CLone Token Factory of an upgreadeable ERC721 Token
+
+## Getting Started
 .Env
 ```bash 
 INFURA_API_KEY=
@@ -31,3 +36,6 @@ Verify the contract ()
 ``` shell
 npx hardhat verify --network <network_name> <address>
 ```
+
+## References
+[Openzeppelin Proxies](https://docs.openzeppelin.com/contracts/4.x/api/proxy)

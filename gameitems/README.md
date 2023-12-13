@@ -1,3 +1,8 @@
+# Game Items
+## Description
+An exmaple of ERC1155 toekn
+
+## Getting Started
 .Env
 ```bash 
 INFURA_API_KEY=
@@ -31,3 +36,7 @@ Verify the contract ()
 ``` shell
 npx hardhat verify --network <network_name> <address>
 ```
+
+## References
+[ERC1155 Openzeppelin](https://docs.openzeppelin.com/contracts/3.x/erc1155)  
+
