@@ -1,0 +1,27 @@
+version: '3'
+services:
+  cl-postgres:
+      container_name: cl-postgres
+      image: "postgres"
+      ports:
+        - 5432:5432
+      env_file:
+        - cl-postgres.env 
+
+  chainlink:
+    image: smartcontract/chainlink:2.5.0
+    platform: linux/x86_64/v8
+    container_name: chainlink
+    volumes:
+      - .chainlink-sepolia:/chainlink
+    ports:
+      - "6688:6688"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["node", "-config", "/chainlink/config.toml", "-secrets", "/chainlink/secrets.toml", "start", "-a", "/chainlink/.api"]
+    stdin_open: true
+    tty: true
+    depends_on: 
+      cl-postgres:
+        condition: service_started
+  

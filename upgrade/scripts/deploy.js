@@ -3,9 +3,9 @@ async function main() {
   const erc721ProxyV1 = await ERC721ProxyV1.deploy();
   console.log("erc721ProxyV1 deployed @ "+ await erc721ProxyV1.address);
 
-  const ERC721ProxyV2 = await ethers.getContractFactory("ERC721ProxyV2");
-  const erc721ProxyV2 = await ERC721ProxyV2.deploy();
-  console.log("erc721ProxyV2 deployed @ "+ await erc721ProxyV1.address);
+  // const ERC721ProxyV2 = await ethers.getContractFactory("ERC721ProxyV2");
+  // const erc721ProxyV2 = await ERC721ProxyV2.deploy();
+  // console.log("erc721ProxyV2 deployed @ "+ await erc721ProxyV1.address);
 
   const CloneTokenFactory = await ethers.getContractFactory("CloneTokenFactory");
   const cloneTokenFactory = await CloneTokenFactory.deploy(erc721ProxyV1.address);
