@@ -8,4 +8,7 @@ Example of blockchain based Battery Passport. The battery is Tokenized as a dyna
 3. Deploy the [Consumer Contract](./client/contracts/BatteryERC721.sol)
 4. Fund the Consumer contract with LINK from the [Chainlink Faucet](https://faucets.chain.link)
 
+## Architecture
+![architecture](./docs/pictures/architecture.png "architecture")
+
 ## References
