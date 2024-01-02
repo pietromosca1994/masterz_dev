@@ -1,5 +1,6 @@
 #!/bin/bash
 source chainlink.env
+source cl-postgre.env
 
 directory=./.chainlink-sepolia
 
@@ -41,8 +42,7 @@ URL = 'postgresql://postgres:mysecretpassword@host.docker.internal:5432/postgres
 " > $directory/secrets.toml
 
 # prepare .api
-echo "
-${API_USER_EMAIL}
+echo "${API_USER_EMAIL}
 ${API_USER_PASSWORD}
 " > $directory/.api
 

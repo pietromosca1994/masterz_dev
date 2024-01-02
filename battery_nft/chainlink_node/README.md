@@ -28,9 +28,15 @@ chmod +x setup_node.sh
 docker-compose up
 ```
 
-4. Compile the Operator contract (use ```README.md``` in ```./operator```)
+4. Compile and deploy the Operator contract (use ```README.md``` in ```./operator```)
 
-5. Create a Job Specification
+5. Compile and deploy the client contract
+
+6. Whitelist the Chainlink Node Address in the Operator contract with setAuthorizedSenders
+
+7. Create a Job Specification using the node dashboard ([Chainlink Node Dashboard](http://localhost:6688/signin))
+
+8. Fund the Chainlink Node Address with ETH
 
 ## References
 [Chainlink Architecture Request Model](https://docs.chain.link/architecture-overview/architecture-request-model/)  
